@@ -8,12 +8,14 @@ import (
 	"io"
 	"log"
 	"os"
+	"path/filepath"
 )
 
 var (
 	showDot = flag.Bool(".", false, "show dot files")
 	nulls   = flag.Bool("0", false, "print files separated by NUL instead of \\n")
 	invert  = flag.Bool("v", false, "only show non-directories")
+	abs     = flag.Bool("abs", false, "print absolute paths")
 )
 
 func opendir(path string) (*os.File, error) {
@@ -72,8 +74,8 @@ func main() {
 		sep = string([]rune{0})
 	}
 
-	for _, d := range dirs {
-		dir, err := opendir(d)
+	for _, dirname := range dirs {
+		dir, err := opendir(dirname)
 		if err != nil {
 			warn(err)
 			dir.Close()
@@ -90,6 +92,17 @@ func main() {
 
 			if !*showDot && name[0] == '.' {
 				return
+			}
+
+			if *abs {
+				var err error
+				name, err = filepath.Abs(name)
+				if err != nil {
+					warn(err)
+					return
+				}
+			} else {
+				name = filepath.Join(dirname, name)
 			}
 
 			fmt.Print(name, sep)
